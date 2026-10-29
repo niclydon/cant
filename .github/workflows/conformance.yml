@@ -1,0 +1,21 @@
+name: conformance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  decoder-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Decoder smoke (valid frame via stdin, invalid frame refused)
+        run: |
+          printf '§CANT/1 PNG aabbccdd\n§/CANT aabbccdd\n' | python3 tools/decode.py -
+          printf '§CANT/99 REQ aaaaaaaa\nop=CRT\n§/CANT aaaaaaaa\n' | python3 tools/decode.py - && exit 1 || true
+      - name: Golden conformance suite
+        run: python3 -m unittest discover -s tests -v
